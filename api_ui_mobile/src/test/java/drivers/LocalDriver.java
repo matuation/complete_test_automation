@@ -1,12 +1,12 @@
 package drivers;
 
 import com.codeborne.selenide.WebDriverProvider;
+import config.MobileConfig;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.android.options.UiAutomator2Options;
+import org.aeonbits.owner.ConfigFactory;
 import org.openqa.selenium.Capabilities;
-import org.openqa.selenium.MutableCapabilities;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.remote.RemoteWebDriver;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -15,27 +15,11 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import static io.appium.java_client.remote.AutomationName.ANDROID_UIAUTOMATOR2;
-import static io.appium.java_client.remote.MobilePlatform.ANDROID;
 import static org.apache.commons.io.FileUtils.copyInputStreamToFile;
 
 public class LocalDriver implements WebDriverProvider {
 
-    @Nonnull
-    @Override
-    public WebDriver createDriver(@Nonnull Capabilities capabilities) {
-        UiAutomator2Options options = new UiAutomator2Options();
-
-        options.setAutomationName(ANDROID_UIAUTOMATOR2)
-                .setPlatformName(ANDROID)
-                .setPlatformVersion("17.0")
-                .setDeviceName("Pixel_3a_API_34_extension_level_7_arm64")
-                .setApp(getAppPath())
-                .setAppPackage("org.wikipedia.alpha")
-                .setAppActivity("org.wikipedia.main.MainActivity");
-
-        return new AndroidDriver(getAppiumServerUrl(), options);
-    }
+    private static final MobileConfig config = ConfigFactory.create(MobileConfig.class, System.getProperties());
 
     public static URL getAppiumServerUrl() {
         try {
@@ -43,6 +27,19 @@ public class LocalDriver implements WebDriverProvider {
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Nonnull
+    @Override
+    public WebDriver createDriver(@Nonnull Capabilities capabilities) {
+
+        UiAutomator2Options options = new UiAutomator2Options();
+        options.setPlatformName(config.platformName())
+                .setDeviceName(config.deviceName())
+                .setPlatformVersion(config.platformVersion())
+                .setApp(new File(config.appPath()).getAbsolutePath());
+
+        return new AndroidDriver(getAppiumServerUrl(), options);
     }
 
     private String getAppPath() {
